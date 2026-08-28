@@ -10,7 +10,8 @@ use iced::{
 
 use std::time::Duration;
 
-// Moduli pub mod app;
+// Moduli
+// `app.rs` / `window.rs` are obsolete drafts (depend on eframe) and are not compiled.
 pub mod components;
 pub mod messages;
 pub mod styles;

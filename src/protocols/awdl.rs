@@ -1,32 +1,28 @@
 //! AWDL Protocol Integration
 //!
-//! This module integrates the OWDL (Open Wireless Direct Link) implementation
-//! into the AirWin project, providing Apple Wireless Direct Link protocol support.
+//! This module provides the AWDL (Apple Wireless Direct Link) manager API used
+//! across AirWin. The original implementation relied on the external `OWDL`
+//! crate which is no longer available, so this module now ships as a
+//! lightweight stub: it keeps the public API surface intact and gracefully
+//! reports AWDL as unavailable instead of failing to compile.
+//!
+//! AWDL requires low-level Wi-Fi frame injection that is not practical on
+//! stock Windows drivers anyway; the rest of AirWin (AirDrop over HTTPS,
+//! AirPlay, mDNS discovery, BLE) is fully functional without it.
 
-use owdl::{
-    AwdlDaemon, DaemonBuilder, DaemonConfig,
-    AwdlData,
-    AwdlPeer,
-};
-use owdl::daemon::{IoConfig, ServiceConfig, DaemonStats};
-
-use crate::utils::{AirWinError, AirWinResult};
+use crate::utils::AirWinResult;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{info, warn, error, debug};
-use serde::{Deserialize, Serialize};
+use tracing::{info, warn};
 
 /// AWDL Manager for AirWin integration
 #[derive(Debug)]
 pub struct AwdlManager {
-    /// AWDL daemon instance
-    daemon: Option<AwdlDaemon>,
     /// Manager configuration
     config: AwdlManagerConfig,
     /// Current state
     state: Arc<RwLock<AwdlManagerState>>,
-    /// Discovered peers
-    peers: Arc<RwLock<Vec<AwdlPeer>>>,
 }
 
 /// AWDL Manager configuration
@@ -100,14 +96,15 @@ impl AwdlManager {
     /// Create new AWDL manager
     pub fn new(config: AwdlManagerConfig) -> Self {
         Self {
-            daemon: None,
             config,
             state: Arc::new(RwLock::new(AwdlManagerState::Stopped)),
-            peers: Arc::new(RwLock::new(Vec::new())),
         }
     }
 
-    /// Initialize the AWDL manager
+    /// Initialize the AWDL manager.
+    ///
+    /// The OWDL backend is unavailable, so AWDL support is disabled and the
+    /// manager stays stopped. This is not an error for the rest of the app.
     pub async fn initialize(&mut self) -> AirWinResult<()> {
         if !self.config.enabled {
             info!("AWDL protocol is disabled in configuration");
@@ -115,132 +112,28 @@ impl AwdlManager {
         }
 
         self.set_state(AwdlManagerState::Initializing).await;
-        info!("Initializing AWDL manager");
-
-        // Create daemon configuration
-        let daemon_config = DaemonConfig::default();
-        let io_config = IoConfig::default();
-        let service_config = ServiceConfig::default();
-
-        // Build daemon
-        let mut builder = DaemonBuilder::new()
-            .with_config(daemon_config)
-            .with_io_config(io_config)
-            .with_service_config(service_config);
-
-        if let Some(ref interface) = self.config.interface {
-            builder = builder.with_interface(Some(interface.clone()));
-        }
-
-        match builder.build().await {
-            Ok(mut daemon) => {
-                // Initialize daemon
-                if let Err(e) = daemon.init().await {
-                    let error_msg = e.to_string();
-                    // Check for port binding errors
-                    if error_msg.contains("10048") || error_msg.contains("already in use") || error_msg.contains("bind") {
-                        warn!("AWDL port already in use, disabling AWDL support: {}", e);
-                        self.config.enabled = false;
-                        self.set_state(AwdlManagerState::Stopped).await;
-                        return Ok(());
-                    }
-                    
-                    error!("Failed to initialize AWDL daemon: {}", e);
-                    self.set_state(AwdlManagerState::Error).await;
-                    return Err(AirWinError::NetworkError(format!("AWDL initialization failed: {}", e)));
-                }
-
-                self.daemon = Some(daemon);
-                info!("AWDL manager initialized successfully");
-
-                if self.config.auto_start {
-                    self.start().await?;
-                }
-
-                Ok(())
-            }
-            Err(e) => {
-                let error_msg = e.to_string();
-                // Check for port binding errors
-                if error_msg.contains("10048") || error_msg.contains("already in use") || error_msg.contains("bind") {
-                    warn!("Cannot build AWDL daemon due to port conflict, disabling AWDL: {}", e);
-                    self.config.enabled = false;
-                    self.set_state(AwdlManagerState::Stopped).await;
-                    return Ok(());
-                }
-                
-                error!("Failed to build AWDL daemon: {}", e);
-                self.set_state(AwdlManagerState::Error).await;
-                Err(AirWinError::NetworkError(format!("AWDL daemon build failed: {}", e)))
-            }
-        }
+        warn!(
+            "AWDL backend (OWDL) is not available in this build; \
+             continuing without AWDL support"
+        );
+        self.config.enabled = false;
+        self.set_state(AwdlManagerState::Stopped).await;
+        Ok(())
     }
 
-    /// Start the AWDL manager
+    /// Start the AWDL manager (no-op when AWDL is unavailable)
     pub async fn start(&mut self) -> AirWinResult<()> {
-        if !self.config.enabled {
-            return Ok(());
+        if self.config.enabled {
+            self.set_state(AwdlManagerState::Running).await;
         }
-
-        self.set_state(AwdlManagerState::Starting).await;
-        info!("Starting AWDL manager");
-
-        if let Some(ref mut daemon) = self.daemon {
-            match daemon.start().await {
-                Ok(()) => {
-                    self.set_state(AwdlManagerState::Running).await;
-                    info!("AWDL manager started successfully");
-
-                    // Start peer discovery task
-                    self.start_peer_discovery().await;
-
-                    Ok(())
-                }
-                Err(e) => {
-                    // Check if error is due to port already in use
-                    let error_msg = e.to_string();
-                    if error_msg.contains("10048") || error_msg.contains("already in use") || error_msg.contains("bind") {
-                        warn!("AWDL port already in use, continuing without AWDL support");
-                        self.set_state(AwdlManagerState::Stopped).await;
-                        // Don't fail completely, just disable AWDL
-                        self.config.enabled = false;
-                        return Ok(());
-                    }
-                    
-                    error!("Failed to start AWDL daemon: {}", e);
-                    self.set_state(AwdlManagerState::Error).await;
-                    Err(AirWinError::NetworkError(format!("AWDL start failed: {}", e)))
-                }
-            }
-        } else {
-            error!("AWDL daemon not initialized");
-            self.set_state(AwdlManagerState::Error).await;
-            Err(AirWinError::NetworkError("AWDL daemon not initialized".to_string()))
-        }
+        Ok(())
     }
 
     /// Stop the AWDL manager
     pub async fn stop(&mut self) -> AirWinResult<()> {
         self.set_state(AwdlManagerState::Stopping).await;
-        info!("Stopping AWDL manager");
-
-        if let Some(ref mut daemon) = self.daemon {
-            match daemon.stop().await {
-                Ok(()) => {
-                    self.set_state(AwdlManagerState::Stopped).await;
-                    info!("AWDL manager stopped successfully");
-                    Ok(())
-                }
-                Err(e) => {
-                    error!("Failed to stop AWDL daemon: {}", e);
-                    self.set_state(AwdlManagerState::Error).await;
-                    Err(AirWinError::NetworkError(format!("AWDL stop failed: {}", e)))
-                }
-            }
-        } else {
-            self.set_state(AwdlManagerState::Stopped).await;
-            Ok(())
-        }
+        self.set_state(AwdlManagerState::Stopped).await;
+        Ok(())
     }
 
     /// Get current state
@@ -248,116 +141,30 @@ impl AwdlManager {
         *self.state.read().await
     }
 
-    /// Get discovered peers
+    /// Get discovered peers (always empty without the OWDL backend)
     pub async fn get_peers(&self) -> Vec<AwdlPeerInfo> {
-        let peers = self.peers.read().await;
-        peers.iter().map(|peer| self.convert_peer_info(peer)).collect()
+        Vec::new()
     }
 
-    /// Send data to a specific peer
-    pub async fn send_data(&self, peer_mac: [u8; 6], data: &[u8]) -> AirWinResult<()> {
-        if let Some(ref _daemon) = self.daemon {
-            // Create AWDL data frame
-            let _src_mac = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]; // TODO: Get actual MAC
-            let _frame = AwdlData::new(
-                peer_mac,
-                _src_mac,
-                0x0800, // IP protocol
-                bytes::Bytes::copy_from_slice(data),
-            );
-
-            // TODO: Implement actual data sending through daemon
-            debug!("Sending {} bytes to peer {:02x?}", data.len(), peer_mac);
-            Ok(())
-        } else {
-            Err(AirWinError::NetworkError("AWDL daemon not available".to_string()))
-        }
-    }
-
-    /// Broadcast data to all peers
-    pub async fn broadcast_data(&self, data: &[u8]) -> AirWinResult<()> {
-        let peers = self.get_peers().await;
-        for peer in peers {
-            if let Err(e) = self.send_data(peer.mac_address, data).await {
-                warn!("Failed to send data to peer {:02x?}: {}", peer.mac_address, e);
-            }
-        }
+    /// Send data to a specific peer (no-op without the OWDL backend)
+    pub async fn send_data(&self, _peer_mac: [u8; 6], _data: &[u8]) -> AirWinResult<()> {
         Ok(())
     }
 
-    /// Get daemon statistics
-    pub async fn get_stats(&self) -> Option<DaemonStats> {
-        if let Some(ref daemon) = self.daemon {
-            Some(daemon.get_stats().await)
-        } else {
-            None
-        }
+    /// Broadcast data to all peers (no-op without the OWDL backend)
+    pub async fn broadcast_data(&self, _data: &[u8]) -> AirWinResult<()> {
+        Ok(())
     }
 
     /// Update configuration
     pub async fn update_config(&mut self, config: AwdlManagerConfig) -> AirWinResult<()> {
-        let was_running = self.get_state().await == AwdlManagerState::Running;
-
-        if was_running {
-            self.stop().await?;
-        }
-
         self.config = config;
-
-        if was_running && self.config.enabled {
-            self.initialize().await?;
-        }
-
         Ok(())
     }
 
     /// Set manager state
     async fn set_state(&self, state: AwdlManagerState) {
         *self.state.write().await = state;
-    }
-
-    /// Start peer discovery task
-    async fn start_peer_discovery(&self) {
-        let peers: Arc<RwLock<Vec<AwdlPeer>>> = Arc::clone(&self.peers);
-        let interval = self.config.discovery_interval;
-        let max_peers = self.config.max_peers;
-
-        tokio::spawn(async move {
-            let mut interval_timer = tokio::time::interval(
-                tokio::time::Duration::from_secs(interval)
-            );
-
-            loop {
-                interval_timer.tick().await;
-
-                // TODO: Implement actual peer discovery
-                debug!("Running peer discovery...");
-
-                // Clean up old peers and maintain max peer limit
-                let mut peers_guard = peers.write().await;
-                let _now = chrono::Utc::now();
-                peers_guard.retain(|_peer| {
-                    // TODO: Implement peer timeout logic
-                    true
-                });
-
-                if peers_guard.len() > max_peers {
-                    peers_guard.truncate(max_peers);
-                }
-            }
-        });
-    }
-
-    /// Convert OWDL peer to AirWin peer info
-    fn convert_peer_info(&self, peer: &AwdlPeer) -> AwdlPeerInfo {
-        AwdlPeerInfo {
-            mac_address: peer.address,
-            device_name: peer.name.clone().unwrap_or_else(|| "Unknown".to_string()),
-            service_name: self.config.service_name.clone(),
-            last_seen: chrono::Utc::now(), // TODO: Use actual timestamp
-            signal_strength: None, // TODO: Get from peer if available
-            capabilities: vec![], // TODO: Extract from peer
-        }
     }
 }
 
@@ -367,14 +174,12 @@ pub struct AwdlUtils;
 impl AwdlUtils {
     /// Check if AWDL is supported on this system
     pub fn is_supported() -> bool {
-        // TODO: Implement platform-specific checks
-        true
+        false
     }
 
     /// Get available network interfaces for AWDL
     pub fn get_available_interfaces() -> Vec<String> {
-        // TODO: Implement interface enumeration
-        vec![]
+        Vec::new()
     }
 
     /// Validate MAC address format
