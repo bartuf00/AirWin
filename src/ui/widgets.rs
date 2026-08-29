@@ -1,7 +1,6 @@
-//! Widget personalizzati per l'interfaccia utente AirWin
+//! Custom widgets for the AirWin UI
 //!
-//! Questo modulo contiene widget personalizzati e riutilizzabili
-//! per creare un'esperienza utente coerente e moderna.
+//! Reusable custom widgets for a coherent, modern experience.
 
 use iced::{
     widget::{
@@ -15,16 +14,16 @@ use iced::{
 use crate::ui::messages::Message;
 use crate::ui::styles;
 
-/// Widget per visualizzare lo stato di connessione
+/// Connection status widget
 pub fn connection_status<'a>(
     is_connected: bool,
     device_name: Option<&str>,
     _theme: &IcedTheme,
 ) -> Element<'a, Message> {
     let (status_text, status_color) = if is_connected {
-        ("Connesso", styles::colors::SUCCESS)
+        ("Connected", styles::colors::SUCCESS)
     } else {
-        ("Disconnesso", styles::colors::ERROR)
+        ("Disconnected", styles::colors::ERROR)
     };
 
     let status_indicator = container(
@@ -62,7 +61,7 @@ pub fn connection_status<'a>(
     .into()
 }
 
-/// Widget per visualizzare il progresso di trasferimento
+/// Transfer progress widget
 pub fn transfer_progress<'a>(
     progress: f32,
     file_name: &str,
@@ -132,7 +131,7 @@ pub fn transfer_progress<'a>(
         .into()
 }
 
-/// Widget per visualizzare le statistiche di rete
+/// Network statistics widget
 pub fn network_stats<'a>(
     upload_speed: &str,
     download_speed: &str,
@@ -158,7 +157,7 @@ pub fn network_stats<'a>(
         vertical_rule(1),
         stat_item("Download", download_speed),
         vertical_rule(1),
-        stat_item("Dispositivi", &connected_devices.to_string()),
+        stat_item("Devices", &connected_devices.to_string()),
     ]
     .align_items(Alignment::Center)
     .spacing(styles::spacing::MEDIUM);
@@ -179,7 +178,7 @@ pub fn network_stats<'a>(
         .into()
 }
 
-/// Widget per visualizzare un badge di stato
+/// Status badge widget
 pub fn status_badge<'a>(
     text_content: &str,
     badge_type: BadgeType,
@@ -208,7 +207,7 @@ pub fn status_badge<'a>(
     .into()
 }
 
-/// Tipi di badge disponibili
+/// Available badge types
 #[derive(Debug, Clone, Copy)]
 pub enum BadgeType {
     Success,
@@ -218,7 +217,7 @@ pub enum BadgeType {
     Neutral,
 }
 
-/// Widget per visualizzare un separatore con testo
+/// Text separator widget
 pub fn text_separator<'a>(
     text_content: &str,
     _theme: &IcedTheme,
@@ -239,17 +238,17 @@ pub fn text_separator<'a>(
     .into()
 }
 
-/// Widget per visualizzare un tooltip informativo
+/// Informational tooltip widget
 pub fn info_tooltip<'a>(
     content: Element<'a, Message>,
     _tooltip_text: &str,
     _theme: &IcedTheme,
 ) -> Element<'a, Message> {
-    // Per ora restituiamo solo il contenuto, in futuro si può implementare un vero tooltip
+    // Returns the content only; a real tooltip can be implemented later
     content
 }
 
-/// Widget per creare un layout a griglia responsive
+/// Responsive grid layout widget
 pub fn responsive_grid<'a>(
     items: Vec<Element<'a, Message>>,
     columns: usize,
@@ -275,7 +274,7 @@ pub fn responsive_grid<'a>(
         .into()
 }
 
-/// Widget per creare un header di sezione
+/// Section header widget
 pub fn section_header<'a>(
     title: &str,
     subtitle: Option<&str>,
@@ -308,7 +307,7 @@ pub fn section_header<'a>(
         .into()
 }
 
-/// Widget per creare un pannello collassabile
+/// Collapsible panel widget
 pub fn collapsible_panel<'a>(
     title: &str,
     is_expanded: bool,

@@ -1,7 +1,6 @@
-//! Modulo delle viste dell'interfaccia utente
+//! UI views
 //!
-//! Questo modulo contiene le diverse viste dell'applicazione AirWin,
-//! organizzate in moduli separati per una migliore manutenibilità.
+//! All main views, organized in separate modules for maintainability.
 
 pub mod main_view;
 pub mod settings_view;

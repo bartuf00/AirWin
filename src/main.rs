@@ -78,36 +78,36 @@ impl AirWinServices {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Inizializza il logger
+    // Initialize the logger
     env_logger::init();
     
-    // Crea un runtime separato per i servizi di background
+    // Separate runtime for background services
     let runtime = tokio::runtime::Runtime::new()?;
     
-    // Crea i servizi AirWin nel runtime
+    // Create AirWin services in the runtime
     let services = runtime.block_on(async {
         match AirWinServices::new().await {
             Ok(s) => Arc::new(s),
             Err(e) => {
-                eprintln!("Errore nella creazione dei servizi: {}", e);
+                eprintln!("Failed to create services: {}", e);
                 std::process::exit(1);
             }
         }
     });
     
-    // Inizializza i servizi in background
+    // Initialize services in the background
     let services_clone = services.clone();
     runtime.spawn(async move {
         if let Err(e) = services_clone.initialize().await {
-            eprintln!("Errore nell'inizializzazione dei servizi: {}", e);
-            // Non terminiamo l'app, continuiamo con funzionalità limitate
+            eprintln!("Failed to initialize services: {}", e);
+            // Keep the app running with limited functionality
         }
     });
     
-    // Mantieni il runtime attivo in un thread separato
+    // Keep the runtime alive on a separate thread
     std::thread::spawn(move || {
         runtime.block_on(async {
-            // Mantieni il runtime attivo
+            // Keep the runtime alive
             loop {
                 tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
             }

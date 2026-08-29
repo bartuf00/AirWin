@@ -1,7 +1,6 @@
-//! Componenti UI riutilizzabili per AirWin
+//! Reusable UI components for AirWin
 //!
-//! Questo modulo contiene componenti personalizzati per creare
-//! un'interfaccia utente coerente e moderna.
+//! Custom components used to build a coherent, modern UI.
 
 pub mod error_dialog;
 pub use error_dialog::{ErrorDialog, from_error};
@@ -16,63 +15,63 @@ use iced::{
 
 use super::{styles, Message};
 
-/// Componente per il titolo principale
+/// Main title component
 pub fn title<'a>(content: &str) -> Text<'a> {
     text(content)
         .size(styles::font_size::XLARGE)
         .style(styles::colors::TEXT_PRIMARY)
 }
 
-/// Componente per il sottotitolo
+/// Subtitle component
 pub fn subtitle<'a>(content: &str) -> Text<'a> {
     text(content)
         .size(styles::font_size::LARGE)
         .style(styles::colors::TEXT_SECONDARY)
 } 
 
-/// Componente per il testo normale
+/// Body text component
 pub fn body_text<'a>(content: &str) -> Text<'a> {
     text(content)
         .size(styles::font_size::MEDIUM)
         .style(styles::colors::TEXT_PRIMARY)
 }
 
-/// Componente per il testo secondario
+/// Secondary text component
 pub fn secondary_text<'a>(content: &str) -> Text<'a> {
     text(content)
         .size(styles::font_size::SMALL)
         .style(styles::colors::TEXT_SECONDARY)
 }
 
-/// Componente per il testo muto
+/// Muted text component
 pub fn muted_text<'a>(content: &str) -> Text<'a> {
     text(content)
         .size(styles::font_size::SMALL)
         .style(styles::colors::TEXT_MUTED)
 }
 
-/// Componente per il testo di successo
+/// Success text component
 pub fn success_text<'a>(content: &str) -> Text<'a> {
     text(content)
         .size(styles::font_size::MEDIUM)
         .style(styles::colors::SUCCESS)
 }
 
-/// Componente per il testo di errore
+/// Error text component
 pub fn error_text<'a>(content: &str) -> Text<'a> {
     text(content)
         .size(styles::font_size::MEDIUM)
         .style(styles::colors::ERROR)
 }
 
-/// Componente per il testo di avviso
+/// Warning text component
 pub fn warning_text<'a>(content: &str) -> Text<'a> {
     text(content)
         .size(styles::font_size::MEDIUM)
         .style(styles::colors::WARNING)
 }
 
-/// Pulsante primario
+/// Primary button
 pub fn primary_button<'a>(content: &str, message: Message) -> Button<'a, Message> {
     button(text(content).size(styles::font_size::MEDIUM))
         .style(iced::theme::Button::Primary)
@@ -80,7 +79,7 @@ pub fn primary_button<'a>(content: &str, message: Message) -> Button<'a, Message
         .on_press(message)
 }
 
-/// Pulsante secondario
+/// Secondary button
 pub fn secondary_button<'a>(content: &str, message: Message) -> Button<'a, Message> {
     button(text(content).size(styles::font_size::MEDIUM))
         .style(iced::theme::Button::Secondary)
@@ -88,7 +87,7 @@ pub fn secondary_button<'a>(content: &str, message: Message) -> Button<'a, Messa
         .on_press(message)
 }
 
-/// Pulsante card (per selezioni)
+/// Card button (for selections)
 pub fn card_button<'a>(content: &str, message: Message) -> Button<'a, Message> {
     button(text(content).size(styles::font_size::MEDIUM))
         .style(iced::theme::Button::Secondary)
@@ -97,7 +96,7 @@ pub fn card_button<'a>(content: &str, message: Message) -> Button<'a, Message> {
         .on_press(message)
 }
 
-/// Pulsante selezionato
+/// Selected button
 pub fn selected_button<'a>(content: &str, message: Message) -> Button<'a, Message> {
     button(text(content).size(styles::font_size::MEDIUM))
         .style(iced::theme::Button::Secondary)
@@ -106,7 +105,7 @@ pub fn selected_button<'a>(content: &str, message: Message) -> Button<'a, Messag
         .on_press(message)
 }
 
-/// Pulsante ghost (trasparente)
+/// Ghost (transparent) button
 pub fn ghost_button<'a>(content: &str, message: Message) -> Button<'a, Message> {
     button(text(content).size(styles::font_size::SMALL))
         .style(iced::theme::Button::Text)
@@ -114,7 +113,7 @@ pub fn ghost_button<'a>(content: &str, message: Message) -> Button<'a, Message> 
         .on_press(message)
 }
 
-/// Container principale
+/// Main container
 pub fn main_container<'a>(content: Element<'a, Message>) -> Container<'a, Message> {
     container(content)
         .style(styles::container_primary)
@@ -123,7 +122,7 @@ pub fn main_container<'a>(content: Element<'a, Message>) -> Container<'a, Messag
         .height(Length::Fill)
 }
 
-/// Container secondario
+/// Secondary container
 pub fn secondary_container<'a>(content: Element<'a, Message>) -> Container<'a, Message> {
     container(content)
         .style(styles::container_secondary)
@@ -131,7 +130,7 @@ pub fn secondary_container<'a>(content: Element<'a, Message>) -> Container<'a, M
         .width(Length::Fill)
 }
 
-/// Container per l'header
+/// Header container
 pub fn header_container<'a>(content: Element<'a, Message>) -> Container<'a, Message> {
     container(content)
         .style(styles::container_header)
@@ -139,7 +138,7 @@ pub fn header_container<'a>(content: Element<'a, Message>) -> Container<'a, Mess
         .width(Length::Fill)
 }
 
-/// Container per notifiche di successo
+/// Success notification container
 pub fn success_container<'a>(content: Element<'a, Message>) -> Container<'a, Message> {
     container(content)
         .style(styles::container_success)
@@ -147,7 +146,7 @@ pub fn success_container<'a>(content: Element<'a, Message>) -> Container<'a, Mes
         .width(Length::Fill)
 }
 
-/// Container per notifiche di errore
+/// Error notification container
 pub fn error_container<'a>(content: Element<'a, Message>) -> Container<'a, Message> {
     container(content)
         .style(styles::container_error)
@@ -155,7 +154,7 @@ pub fn error_container<'a>(content: Element<'a, Message>) -> Container<'a, Messa
         .width(Length::Fill)
 }
 
-/// Container per notifiche di avviso
+/// Warning notification container
 pub fn warning_container<'a>(content: Element<'a, Message>) -> Container<'a, Message> {
     container(content)
         .style(styles::container_warning)
@@ -163,7 +162,7 @@ pub fn warning_container<'a>(content: Element<'a, Message>) -> Container<'a, Mes
         .width(Length::Fill)
 }
 
-/// Container per notifiche informative
+/// Info notification container
 pub fn info_container<'a>(content: Element<'a, Message>) -> Container<'a, Message> {
     container(content)
         .style(styles::container_info)
@@ -171,77 +170,77 @@ pub fn info_container<'a>(content: Element<'a, Message>) -> Container<'a, Messag
         .width(Length::Fill)
 }
 
-/// Barra di progresso primaria
+/// Primary progress bar
 pub fn primary_progress_bar(value: f32) -> ProgressBar {
     progress_bar(0.0..=100.0, value)
         .style(styles::progress_bar_primary)
         .height(8)
 }
 
-/// Barra di progresso di successo
+/// Success progress bar
 pub fn success_progress_bar(value: f32) -> ProgressBar {
     progress_bar(0.0..=100.0, value)
         .style(styles::progress_bar_success)
         .height(8)
 }
 
-/// Barra di progresso di avviso
+/// Warning progress bar
 pub fn warning_progress_bar(value: f32) -> ProgressBar {
     progress_bar(0.0..=100.0, value)
         .style(styles::progress_bar_warning)
         .height(8)
 }
 
-/// Barra di progresso di errore
+/// Error progress bar
 pub fn error_progress_bar(value: f32) -> ProgressBar {
     progress_bar(0.0..=100.0, value)
         .style(styles::progress_bar_error)
         .height(8)
 }
 
-/// Layout a colonna con spaziatura standard
+/// Column layout with standard spacing
 pub fn spaced_column<'a>(children: Vec<Element<'a, Message>>) -> Column<'a, Message> {
     column(children)
         .spacing(styles::spacing::MEDIUM)
         .width(Length::Fill)
 }
 
-/// Layout a colonna con spaziatura piccola
+/// Column layout with small spacing
 pub fn tight_column<'a>(children: Vec<Element<'a, Message>>) -> Column<'a, Message> {
     column(children)
         .spacing(styles::spacing::SMALL)
         .width(Length::Fill)
 }
 
-/// Layout a colonna con spaziatura grande
+/// Column layout with large spacing
 pub fn loose_column<'a>(children: Vec<Element<'a, Message>>) -> Column<'a, Message> {
     column(children)
         .spacing(styles::spacing::LARGE)
         .width(Length::Fill)
 }
 
-/// Layout a riga con spaziatura standard
+/// Row layout with standard spacing
 pub fn spaced_row<'a>(children: Vec<Element<'a, Message>>) -> Row<'a, Message> {
     row(children)
         .spacing(styles::spacing::MEDIUM)
         .align_items(Alignment::Center)
 }
 
-/// Layout a riga con spaziatura piccola
+/// Row layout with small spacing
 pub fn tight_row<'a>(children: Vec<Element<'a, Message>>) -> Row<'a, Message> {
     row(children)
         .spacing(styles::spacing::SMALL)
         .align_items(Alignment::Center)
 }
 
-/// Layout a riga con spaziatura grande
+/// Row layout with large spacing
 pub fn loose_row<'a>(children: Vec<Element<'a, Message>>) -> Row<'a, Message> {
     row(children)
         .spacing(styles::spacing::LARGE)
         .align_items(Alignment::Center)
 }
 
-/// Card component per visualizzare informazioni
+/// Card component for displaying information
 pub fn info_card<'a>(
     title_text: &str,
     description: &str,
@@ -260,25 +259,30 @@ pub fn info_card<'a>(
     secondary_container(spaced_column(content).into())
 }
 
-/// Card component per selezioni
+/// Card component for selections
 pub fn selection_card<'a>(
     title: &str,
     description: &str,
     is_selected: bool,
     message: Message,
 ) -> Element<'a, Message> {
-    let _content = spaced_column(vec![
-        body_text(title).into(),
-        muted_text(description).into(),
-    ]);
+    let content = column![
+        body_text(title),
+        muted_text(description),
+    ]
+    .spacing(styles::spacing::TINY)
+    .width(Length::Fill);
 
-    let button = if is_selected {
-        selected_button("", message)
-    } else {
-        card_button("", message)
-    };
-
-    button.into()
+    button(content)
+        .style(if is_selected {
+            iced::theme::Button::Primary
+        } else {
+            iced::theme::Button::Secondary
+        })
+        .padding(styles::spacing::MEDIUM.0)
+        .width(Length::Fill)
+        .on_press(message)
+        .into()
 }
 
 /// Notification component
@@ -294,7 +298,7 @@ pub fn notification<'a>(
     }
 }
 
-/// Tipo di notifica
+/// Notification type
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NotificationType {
     Success,
@@ -303,7 +307,7 @@ pub enum NotificationType {
     Info,
 }
 
-/// Header component con titolo e sottotitolo
+/// Header component with title and subtitle
 pub fn page_header<'a>(title_text: &str, subtitle_text: Option<&str>) -> Container<'a, Message> {
     let mut content = vec![title(title_text).into()];
 
@@ -321,11 +325,11 @@ pub fn status_indicator<'a>(
     value: Option<&str>,
 ) -> Element<'a, Message> {
     let status_text = match status {
-        StatusType::Active => success_text("Attivo"),
-        StatusType::Inactive => muted_text("Inattivo"),
-        StatusType::Error => error_text("Errore"),
-        StatusType::Warning => warning_text("Attenzione"),
-        StatusType::Processing => body_text("In elaborazione"),
+        StatusType::Active => success_text("Active"),
+        StatusType::Inactive => muted_text("Inactive"),
+        StatusType::Error => error_text("Error"),
+        StatusType::Warning => warning_text("Warning"),
+        StatusType::Processing => body_text("Processing"),
     };
 
     let mut row_content = vec![
@@ -340,7 +344,7 @@ pub fn status_indicator<'a>(
     spaced_row(row_content).into()
 }
 
-/// Tipo di stato
+/// Status type
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StatusType {
     Active,
@@ -350,7 +354,7 @@ pub enum StatusType {
     Processing,
 }
 
-/// Progress indicator con etichetta
+/// Labeled progress indicator
 pub fn labeled_progress<'a>(
     label: &str,
     value: f32,
@@ -374,7 +378,7 @@ pub fn labeled_progress<'a>(
     .into()
 }
 
-/// Tipo di progress bar
+/// Progress bar type
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProgressType {
     Primary,
@@ -383,7 +387,7 @@ pub enum ProgressType {
     Error,
 }
 
-/// Spacer component per aggiungere spazio
+/// Spacer component
 pub fn spacer<'a>(size: SpacerSize) -> Element<'a, Message> {
     let height = match size {
         SpacerSize::Small => styles::spacing::SMALL,
@@ -397,7 +401,7 @@ pub fn spacer<'a>(size: SpacerSize) -> Element<'a, Message> {
         .into()
 }
 
-/// Dimensioni del spacer
+/// Spacer sizes
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SpacerSize {
     Small,
@@ -406,7 +410,7 @@ pub enum SpacerSize {
     XLarge,
 }
 
-/// Action bar con pulsanti
+/// Action bar with buttons
 pub fn action_bar<'a>(actions: Vec<(String, Message)>) -> Element<'a, Message> {
     let buttons: Vec<Element<'a, Message>> = actions
         .into_iter()
@@ -460,7 +464,7 @@ pub fn empty_state<'a>(
     .into()
 }
 
-/// Stato di caricamento generico con animazione migliorata
+/// Generic loading state
 pub fn loading_state(message: &str) -> Element<Message> {
     main_container(
         spaced_column(vec![
@@ -468,7 +472,7 @@ pub fn loading_state(message: &str) -> Element<Message> {
             container(
                 column![
                     container(
-                        text("⚡")
+                        text("A")
                             .size(64)
                             .style(styles::colors::PRIMARY)
                     )

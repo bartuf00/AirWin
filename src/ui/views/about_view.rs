@@ -1,7 +1,6 @@
-//! Vista About dell'applicazione AirWin
+//! About view
 //!
-//! Questa vista mostra informazioni sull'applicazione, crediti,
-//! licenze e collegamenti utili.
+//! Shows application information, credits, licenses and useful links.
 
 use iced::{
     widget::{
@@ -18,7 +17,7 @@ use crate::ui::{
     styles,
 };
  
-/// Struttura per la vista About
+/// About view state
 #[derive(Debug, Clone)]
 pub struct AboutView {
     app_version: String,
@@ -27,7 +26,7 @@ pub struct AboutView {
 } 
  
 impl AboutView {
-    /// Crea una nuova istanza della vista About
+    /// Create a new about view
     pub fn new(
         app_version: String, 
         build_date: String,
@@ -40,11 +39,11 @@ impl AboutView {
         }
     }
 
-    /// Renderizza la vista About
+    /// Render the about view
     pub fn view(&self, theme: &Theme) -> Element<Message> {
         let header = row![
             button(
-                text("← Indietro")
+                text("← Back")
                     .size(14)
             )
             .on_press(Message::ShowMainView)
@@ -52,7 +51,7 @@ impl AboutView {
             
             Space::with_width(styles::spacing::MEDIUM),
             
-            text("Informazioni")
+            text("About")
                 .size(24)
                 .style(styles::colors::TEXT_PRIMARY),
         ]
@@ -61,37 +60,37 @@ impl AboutView {
 
         let content = scrollable(
             column![
-                // Logo e titolo principale
+                // Logo and main title
                 self.app_header(theme),
                 
                 Space::with_height(styles::spacing::LARGE),
                 
-                // Informazioni versione
+                // Version information
                 self.version_info(theme),
                 
                 Space::with_height(styles::spacing::LARGE),
                 
-                // Descrizione
+                // Description
                 self.description(theme),
                 
                 Space::with_height(styles::spacing::LARGE),
                 
-                // Funzionalità
+                // Features
                 self.features(theme),
                 
                 Space::with_height(styles::spacing::LARGE),
                 
-                // Crediti
+                // Credits
                 self.credits(theme),
                 
                 Space::with_height(styles::spacing::LARGE),
                 
-                // Licenze
+                // Licenses
                 self.licenses(theme),
                 
                 Space::with_height(styles::spacing::LARGE),
                 
-                // Collegamenti
+                // Links
                 self.links(theme),
                 
                 Space::with_height(styles::spacing::XLARGE),
@@ -113,24 +112,24 @@ impl AboutView {
 
 
 
-    /// Header dell'applicazione con logo
+    /// Application header with logo
     fn app_header(&self, _theme: &Theme) -> Element<Message> {
         container(
             column![
-                // Logo (emoji come placeholder)
-                text("📱")
+                // App icon
+                text("A")
                     .size(64)
                     .style(styles::colors::TEXT_PRIMARY),
                 
                 Space::with_height(styles::spacing::MEDIUM),
                 
-                // Nome applicazione
+                // App name
                 text("AirWin")
                     .size(32)
                     .style(styles::colors::TEXT_PRIMARY),
                 
-                // Sottotitolo
-                text("Condivisione wireless per Windows")
+                // Subtitle
+                text("Wireless sharing for Windows")
                     .size(16)
                     .style(styles::colors::TEXT_MUTED),
             ]
@@ -142,11 +141,11 @@ impl AboutView {
         .into()
     }
 
-    /// Informazioni sulla versione
+    /// Version information
     fn version_info(&self, _theme: &Theme) -> Element<Message> {
         let version_items = column![
             row![
-                text("Versione:")
+                text("Version:")
                     .size(14)
                     .style(styles::colors::TEXT_PRIMARY)
                     .width(Length::FillPortion(1)),
@@ -197,7 +196,7 @@ impl AboutView {
 
         container(
             column![
-                text("Versione")
+                text("Version")
                     .size(18)
                     .style(styles::colors::TEXT_SECONDARY),
                 
@@ -212,23 +211,23 @@ impl AboutView {
         .into()
     }
 
-    /// Descrizione dell'applicazione
+    /// Description dell'applicazione
     fn description(&self, _theme: &Theme) -> Element<Message> {
         container(
             column![
-                text("Descrizione")
+                text("Description")
                     .size(18)
                     .style(styles::colors::TEXT_SECONDARY),
                 
                 Space::with_height(styles::spacing::MEDIUM),
                 
-                text("AirWin è un'applicazione che porta le funzionalità di AirDrop e AirPlay di Apple su Windows. Permette di condividere file, link e contenuti multimediali tra dispositivi Apple e Windows in modo semplice e intuitivo.")
+                text("AirWin brings Apple's AirDrop and AirPlay features to Windows. It lets you share files, links and media between Apple devices and Windows in a simple, intuitive way.")
                     .size(14)
                     .style(styles::colors::TEXT_PRIMARY),
                 
                 Space::with_height(styles::spacing::MEDIUM),
                 
-                text("L'applicazione utilizza i protocolli di rete standard per garantire compatibilità e sicurezza nelle comunicazioni wireless.")
+                text("The application uses standard network protocols to ensure compatibility and security in wireless communications.")
                     .size(14)
                     .style(styles::colors::TEXT_PRIMARY),
             ]
@@ -239,21 +238,21 @@ impl AboutView {
         .into()
     }
 
-    /// Funzionalità principali
+    /// Features principali
     fn features(&self, theme: &Theme) -> Element<Message> {
         let features_list = column![
-            (&self).feature_item("📁", "Condivisione File", "Invia e ricevi file tramite AirDrop", theme),
-            (&self).feature_item("🔗", "Condivisione Link", "Condividi URL e collegamenti web", theme),
-            (&self).feature_item("📺", "Streaming AirPlay", "Trasmetti contenuti multimediali", theme),
-            (&self).feature_item("🔍", "Scoperta Automatica", "Trova dispositivi compatibili automaticamente", theme),
-            (&self).feature_item("🔒", "Sicurezza", "Comunicazioni crittografate e sicure", theme),
-            (&self).feature_item("⚡", "Prestazioni", "Trasferimenti veloci e affidabili", theme),
+            (&self).feature_item("📁", "File Sharing", "Send and receive files via AirDrop", theme),
+            (&self).feature_item("🔗", "Link Sharing", "Share URLs and web links", theme),
+            (&self).feature_item("📺", "AirPlay Streaming", "Stream media content", theme),
+            (&self).feature_item("🔍", "Automatic Discovery", "Find compatible devices automatically", theme),
+            (&self).feature_item("🔒", "Security", "Encrypted, secure communications", theme),
+            (&self).feature_item("⚡", "Performance", "Fast, reliable transfers", theme),
         ]
         .spacing(styles::spacing::MEDIUM);
   
         container(
             column![
-                text("Funzionalità")
+                text("Features")
                     .size(18)
                     .style(styles::colors::TEXT_SECONDARY),
                 
@@ -268,7 +267,7 @@ impl AboutView {
         .into()
     }
 
-    /// Singola funzionalità
+    /// Single feature row
     fn feature_item(
         &self,
         icon: &str,
@@ -297,36 +296,36 @@ impl AboutView {
         .into()
     }
 
-    /// Crediti e riconoscimenti
+    /// Credits e riconoscimenti
     fn credits(&self, _theme: &Theme) -> Element<Message> {
         container(
             column![
-                text("Crediti")
+                text("Credits")
                     .size(18)
                     .style(styles::colors::TEXT_SECONDARY),
                 
                 Space::with_height(styles::spacing::MEDIUM),
                 
-                text("Sviluppato con ❤️ utilizzando:")
+                text("Built with:")
                     .size(14)
                     .style(styles::colors::TEXT_PRIMARY),
                 
                 Space::with_height(styles::spacing::SMALL),
                 
                 column![
-                    text("• Rust - Linguaggio di programmazione")
+                    text("• Rust - Programming language")
                         .size(12)
                         .style(styles::colors::TEXT_MUTED),
                     
-                    text("• Iced - Framework per interfacce grafiche")
+                    text("• Iced - GUI framework")
                         .size(12)
                         .style(styles::colors::TEXT_MUTED),
                     
-                    text("• Tokio - Runtime asincrono")
+                    text("• Tokio - Async runtime")
                         .size(12)
                         .style(styles::colors::TEXT_MUTED),
                     
-                    text("• mDNS-SD - Scoperta servizi di rete")
+                    text("• mDNS-SD - Network service discovery")
                         .size(12)
                         .style(styles::colors::TEXT_MUTED),
                 ]
@@ -334,7 +333,7 @@ impl AboutView {
                 
                 Space::with_height(styles::spacing::MEDIUM),
                 
-                text("Ringraziamenti speciali alla comunità open source per i contributi e il supporto.")
+                text("Special thanks to the open-source community for contributions and support.")
                     .size(12)
                     .style(styles::colors::TEXT_MUTED),
             ]
@@ -345,30 +344,30 @@ impl AboutView {
         .into()
     }
 
-    /// Informazioni sulle licenze
+    /// License information
     fn licenses(&self, _theme: &Theme) -> Element<Message> {
         container(
             column![
-                text("Licenze")
+                text("Licenses")
                     .size(18)
                     .style(styles::colors::TEXT_SECONDARY),
                 
                 Space::with_height(styles::spacing::MEDIUM),
                 
-                text("AirWin è distribuito sotto licenza MIT.")
+                text("AirWin is distributed under the MIT license.")
                     .size(14)
                     .style(styles::colors::TEXT_PRIMARY),
                 
                 Space::with_height(styles::spacing::SMALL),
                 
-                text("Questo software utilizza librerie di terze parti, ciascuna con la propria licenza. Per informazioni dettagliate, consulta il file LICENSE nel repository del progetto.")
+                text("This software uses third-party libraries, each with its own license. For details, see the LICENSE file in the project repository.")
                     .size(12)
                     .style(styles::colors::TEXT_MUTED),
                 
                 Space::with_height(styles::spacing::MEDIUM),
                 
                 button(
-                    text("📄 Visualizza Licenze")
+                    text("View Licenses")
                         .size(14)
                 )
                 .on_press(Message::OpenLicenses)
@@ -381,11 +380,11 @@ impl AboutView {
         .into()
     }
 
-    /// Collegamenti utili
+    /// Links utili
     fn links(&self, _theme: &Theme) -> Element<Message> {
         container(
             column![
-                text("Collegamenti")
+                text("Links")
                     .size(18)
                     .style(styles::colors::TEXT_SECONDARY),
                 
@@ -393,14 +392,14 @@ impl AboutView {
                 
                 row![
                     button(
-                        text("🌐 Sito Web")
+                        text("Website")
                             .size(14)
                     )
                     .on_press(Message::OpenWebsite)
                     .style(iced::theme::Button::Secondary),
                     
                     button(
-                        text("📚 Documentazione")
+                        text("Documentation")
                             .size(14)
                     )
                     .on_press(Message::OpenDocumentation)
@@ -410,14 +409,14 @@ impl AboutView {
                 
                 row![
                     button(
-                        text("🐛 Segnala Bug")
+                        text("Report a Bug")
                             .size(14)
                     )
                     .on_press(Message::OpenIssues)
                     .style(iced::theme::Button::Secondary),
                     
                     button(
-                        text("💡 Richiedi Funzionalità")
+                        text("Request a Feature")
                             .size(14)
                     )
                     .on_press(Message::OpenFeatureRequest)
@@ -427,7 +426,7 @@ impl AboutView {
                 
                 Space::with_height(styles::spacing::MEDIUM),
                 
-                text("Per supporto e assistenza, visita il nostro repository GitHub o contatta il team di sviluppo.")
+                text("For support, visit our GitHub repository or contact the development team.")
                     .size(12)
                     .style(styles::colors::TEXT_MUTED),
             ]

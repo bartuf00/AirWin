@@ -1,7 +1,7 @@
-//! Vista principale dell'applicazione AirWin
+//! Main application view
 //!
-//! Questa vista contiene il layout principale con la lista dei dispositivi,
-//! il pannello delle azioni e la barra di stato.
+//! Layout with the device list on the left, the action panel on the right
+//! and a status bar plus a bounded activity log at the bottom.
 
 use iced::{
     widget::{
@@ -13,12 +13,12 @@ use iced::{
 
 use crate::ui::{
     components,
-    messages::{Message, NotificationMessage},
+    messages::{Message, NotificationMessage, NotificationType},
     styles,
     Theme,
 };
 
-/// Struttura per la vista principale
+/// Main view state (borrows everything from the app)
 pub struct MainView<'a> {
     discovered_devices: &'a [crate::network::DiscoveredDevice],
     selected_device: Option<&'a crate::network::DiscoveredDevice>,
@@ -29,8 +29,11 @@ pub struct MainView<'a> {
     notifications: &'a [NotificationMessage],
     show_link_dialog: bool,
     link_url: &'a str,
-}  
-/// Helper function to render the main view without constructing a temporary in the caller
+}
+
+/// Maximum height reserved for the activity log at the bottom of the window.
+const ACTIVITY_LOG_HEIGHT: f32 = 132.0;
+
 pub fn render<'a>(
     discovered_devices: &'a [crate::network::DiscoveredDevice],
     selected_device: Option<&'a crate::network::DiscoveredDevice>,
@@ -58,7 +61,6 @@ pub fn render<'a>(
 }
 
 impl<'a> MainView<'a> {
-    /// Crea una nuova istanza della vista principale
     pub fn new(
         discovered_devices: &'a [crate::network::DiscoveredDevice],
         selected_device: Option<&'a crate::network::DiscoveredDevice>,
@@ -83,97 +85,78 @@ impl<'a> MainView<'a> {
         }
     }
 
-    /// Renderizza la vista principale
     pub fn view(&self, theme: &Theme) -> Element<'a, Message> {
         let main_content = row![
-            // Pannello sinistro - Lista dispositivi
             self.device_panel(theme),
-            
             vertical_rule(1),
-            
-            // Pannello destro - Azioni e controlli
             self.action_panel(theme),
         ]
         .spacing(styles::spacing::MEDIUM)
         .height(Length::Fill);
 
-        let content = column![
-            // Header con titolo e controlli
+        let mut content = column![
             self.header(theme),
-            
             horizontal_rule(1),
-            
-            // Contenuto principale
             main_content,
-            
-            horizontal_rule(1),
-            
-            // Barra di stato
-            self.status_bar(theme),
         ]
         .spacing(styles::spacing::SMALL);
 
-        // Overlay per notificazioni
-        let with_notifications = if !self.notifications.is_empty() {
-            container(
-                column![
-                    content,
-                    Space::with_height(Length::Fill),
-                    self.notifications_overlay(theme),
-                ]
-            )
-        } else {
-            container(content)
-        };
+        if !self.notifications.is_empty() {
+            content = content.push(horizontal_rule(1));
+            content = content.push(self.activity_log(theme));
+        }
 
-        // Dialog per invio link
+        content = content.push(horizontal_rule(1));
+        content = content.push(self.status_bar(theme));
+
+        let base: Element<Message> = container(content)
+            .padding(styles::spacing::MEDIUM.0)
+            .into();
+
         if self.show_link_dialog {
-            let overlay: Element<Message> = with_notifications.into();
             container(
                 column![
-                    overlay,
+                    base,
                     self.link_dialog(theme),
                 ]
             )
             .padding(styles::spacing::MEDIUM.0)
             .into()
         } else {
-            with_notifications
-                .padding(styles::spacing::MEDIUM.0)
-                .into()
+            base
         }
     }
-    
-    /// Header dell'applicazione
+
     fn header(&self, theme: &Theme) -> Element<'a, Message> {
         row![
-            // Titolo
             text("AirWin")
                 .size(24)
                 .style(styles::colors::TEXT_PRIMARY),
-            
+
             Space::with_width(Length::Fill),
-            
-            // Controlli header
+
             row![
-                // Pulsante refresh/scansione
                 button(
-                    text(if self.is_scanning { "⏹" } else { "🔄" })
-                        .size(16)
+                    text(if self.is_scanning { "Stop" } else { "Scan" })
+                        .size(14)
                 )
                 .on_press(if self.is_scanning {
                     Message::StopScanning
                 } else {
                     Message::StartScanning
+                })
+                .style(if self.is_scanning {
+                    iced::theme::Button::Secondary
+                } else {
+                    iced::theme::Button::Primary
                 }),
-                
-                // Toggle tema
+
                 button(
                     text(match theme {
-                        Theme::Light => "🌙",
-                        Theme::Dark => "☀",
+                        Theme::Light => "Dark",
+                        Theme::Dark => "Light",
                     })
-                    .size(16)
+                    .size(14)
                 )
                 .on_press(Message::ThemeChanged(match theme { Theme::Light => Theme::Dark, Theme::Dark => Theme::Light })),
             ]
@@ -184,15 +167,14 @@ impl<'a> MainView<'a> {
         .into()
     }
 
-    /// Pannello dei dispositivi
     fn device_panel(&self, _theme: &Theme) -> Element<'a, Message> {
         let header = row![
-            text("Dispositivi Scoperti")
+            text("Discovered Devices")
                 .size(18)
                 .style(styles::colors::TEXT_SECONDARY),
-            
+
             Space::with_width(Length::Fill),
-            
+
             text(format!("({})", self.discovered_devices.len()))
                 .size(14)
                 .style(styles::colors::TEXT_MUTED),
@@ -203,10 +185,10 @@ impl<'a> MainView<'a> {
             if self.is_scanning {
                 container(
                     column![
-                        text("🔍")
+                        text("...")
                             .size(48)
                             .style(styles::colors::TEXT_MUTED),
-                        text("Scansione in corso...")
+                        text("Scanning...")
                             .size(16)
                             .style(styles::colors::TEXT_MUTED),
                     ]
@@ -220,13 +202,10 @@ impl<'a> MainView<'a> {
             } else {
                 container(
                     column![
-                        text("📱")
-                            .size(48)
-                            .style(styles::colors::TEXT_MUTED),
-                        text("Nessun dispositivo trovato")
+                        text("No devices found")
                             .size(16)
                             .style(styles::colors::TEXT_MUTED),
-                        text("Premi il pulsante refresh per cercare")
+                        text("Press Scan to search again")
                             .size(14)
                             .style(styles::colors::TEXT_MUTED),
                     ]
@@ -249,12 +228,12 @@ impl<'a> MainView<'a> {
                             .as_ref()
                             .map(|selected| selected.name == device.name)
                             .unwrap_or(false);
-                        
-                        let desc = format!("{} • {}:{}", 
-                            match device.service_type { 
+
+                        let desc = format!("{} • {}:{}",
+                            match device.service_type {
                                 crate::network::ServiceType::AirDrop => "AirDrop",
                                 crate::network::ServiceType::AirPlay => "AirPlay",
-                                _ => "Altro",
+                                _ => "Other",
                             },
                             device.address,
                             device.port
@@ -289,34 +268,29 @@ impl<'a> MainView<'a> {
         .into()
     }
 
-    /// Pannello delle azioni
     fn action_panel(&self, theme: &Theme) -> Element<'a, Message> {
-        let header = text("Azioni")
+        let header = text("Actions")
             .size(18)
             .style(styles::colors::TEXT_SECONDARY);
 
         let content = if let Some(device) = self.selected_device {
             column![
-                // Informazioni dispositivo selezionato
                 self.selected_device_info(device, theme),
-                
+
                 Space::with_height(styles::spacing::LARGE),
-                
-                // Azioni AirDrop
+
                 self.airdrop_actions(theme),
-                
+
                 Space::with_height(styles::spacing::MEDIUM),
-                
-                // Azioni AirPlay (se il servizio selezionato è AirPlay)
+
                 if matches!(device.service_type, crate::network::ServiceType::AirPlay) {
                     self.airplay_actions(theme)
                 } else {
                     Space::with_height(0).into()
                 },
-                
+
                 Space::with_height(Length::Fill),
-                
-                // Progresso trasferimento
+
                 if let Some(progress) = self.file_transfer_progress {
                     self.transfer_progress(progress, theme)
                 } else {
@@ -327,13 +301,10 @@ impl<'a> MainView<'a> {
             column![
                 container(
                     column![
-                        text("👆")
-                            .size(48)
-                            .style(styles::colors::TEXT_MUTED),
-                        text("Seleziona un dispositivo")
+                        text("Select a device")
                             .size(16)
                             .style(styles::colors::TEXT_MUTED),
-                        text("per iniziare")
+                        text("to get started")
                             .size(14)
                             .style(styles::colors::TEXT_MUTED),
                     ]
@@ -359,7 +330,6 @@ impl<'a> MainView<'a> {
         .into()
     }
 
-    /// Informazioni del dispositivo selezionato
     fn selected_device_info(
         &self,
         device: &crate::network::DiscoveredDevice,
@@ -369,12 +339,12 @@ impl<'a> MainView<'a> {
             text(&device.name)
                 .size(16)
                 .style(styles::colors::TEXT_PRIMARY),
-            
-            text(format!("{} • {}:{}", 
-                match device.service_type { 
+
+            text(format!("{} • {}:{}",
+                match device.service_type {
                     crate::network::ServiceType::AirDrop => "AirDrop",
                     crate::network::ServiceType::AirPlay => "AirPlay",
-                    _ => "Altro",
+                    _ => "Other",
                 },
                 device.address,
                 device.port
@@ -386,29 +356,28 @@ impl<'a> MainView<'a> {
         .into()
     }
 
-    /// Azioni AirDrop
     fn airdrop_actions(&self, _theme: &Theme) -> Element<'a, Message> {
         let status_text = match self.airdrop_status {
-            crate::protocols::airdrop::AirDropStatus::Idle => "Pronto",
-            crate::protocols::airdrop::AirDropStatus::Connecting => "Connessione...",
-            crate::protocols::airdrop::AirDropStatus::Connected => "Connesso",
-            crate::protocols::airdrop::AirDropStatus::Transferring(_) => "Trasferimento...",
-            crate::protocols::airdrop::AirDropStatus::Failed(_) => "Errore",
+            crate::protocols::airdrop::AirDropStatus::Idle => "Ready",
+            crate::protocols::airdrop::AirDropStatus::Connecting => "Connecting...",
+            crate::protocols::airdrop::AirDropStatus::Connected => "Connected",
+            crate::protocols::airdrop::AirDropStatus::Transferring(_) => "Transferring...",
+            crate::protocols::airdrop::AirDropStatus::Failed(_) => "Error",
         };
 
         column![
             text("AirDrop")
                 .size(14)
                 .style(styles::colors::TEXT_SECONDARY),
-            
+
             text(status_text)
                 .size(12)
                 .style(styles::colors::TEXT_MUTED),
-            
+
             Space::with_height(styles::spacing::SMALL),
-            
+
             button(
-                text("📁 Invia File")
+                text("Send File")
                     .size(14)
             )
             .on_press_maybe(
@@ -419,9 +388,9 @@ impl<'a> MainView<'a> {
                 }
             )
             .width(Length::Fill),
-            
+
             button(
-                text("🔗 Invia Link")
+                text("Send Link")
                     .size(14)
             )
             .on_press_maybe(
@@ -437,20 +406,19 @@ impl<'a> MainView<'a> {
         .into()
     }
 
-    /// Azioni AirPlay
     fn airplay_actions(&self, _theme: &Theme) -> Element<'a, Message> {
         let (status_text, button_text, button_action) = match self.airplay_status {
             crate::protocols::airplay::AirPlayStatus::Idle => {
-                ("Disconnesso", "📺 Connetti", self.selected_device.map(|d| Message::StartScreenMirroring(d.clone())))
+                ("Disconnected", "Connect", self.selected_device.map(|d| Message::StartScreenMirroring(d.clone())))
             },
             crate::protocols::airplay::AirPlayStatus::Connecting => {
-                ("Connessione...", "⏳ Connessione...", None)
+                ("Connecting...", "Connecting...", None)
             },
             crate::protocols::airplay::AirPlayStatus::Connected => {
-                ("Connesso", "⏹ Disconnetti", Some(Message::StopScreenMirroring))
+                ("Connected", "Disconnect", Some(Message::StopScreenMirroring))
             },
             crate::protocols::airplay::AirPlayStatus::Failed(_) => {
-                ("Errore", "🔄 Riprova", self.selected_device.map(|d| Message::StartScreenMirroring(d.clone())))
+                ("Error", "Retry", self.selected_device.map(|d| Message::StartScreenMirroring(d.clone())))
             },
         };
 
@@ -458,13 +426,13 @@ impl<'a> MainView<'a> {
             text("AirPlay")
                 .size(14)
                 .style(styles::colors::TEXT_SECONDARY),
-            
+
             text(status_text)
                 .size(12)
                 .style(styles::colors::TEXT_MUTED),
-            
+
             Space::with_height(styles::spacing::SMALL),
-            
+
             button(
                 text(button_text)
                     .size(14)
@@ -476,15 +444,14 @@ impl<'a> MainView<'a> {
         .into()
     }
 
-    /// Progresso del trasferimento
     fn transfer_progress(&self, progress: f32, _theme: &Theme) -> Element<'a, Message> {
         column![
-            text("Trasferimento in corso")
+            text("Transferring")
                 .size(14)
                 .style(styles::colors::TEXT_SECONDARY),
-            
+
             iced::Element::<Message>::from(components::primary_progress_bar(progress)),
-            
+
             text(format!("{:.1}%", progress))
                 .size(12)
                 .style(styles::colors::TEXT_MUTED),
@@ -493,10 +460,15 @@ impl<'a> MainView<'a> {
         .into()
     }
 
-    /// Barra di stato
     fn status_bar(&self, _theme: &Theme) -> Element<'a, Message> {
-        let left = if self.is_scanning { "Scansione in corso...".to_string() } else { format!("Dispositivi: {}", self.discovered_devices.len()) };
-        let right = self.selected_device.map(|d| d.name.clone()).unwrap_or_else(|| "Nessun dispositivo".to_string());
+        let left = if self.is_scanning {
+            "Scanning...".to_string()
+        } else {
+            format!("Devices: {}", self.discovered_devices.len())
+        };
+        let right = self.selected_device
+            .map(|d| d.name.clone())
+            .unwrap_or_else(|| "No device selected".to_string());
         container(
             row![
                 text(left).style(styles::colors::TEXT_SECONDARY),
@@ -505,61 +477,114 @@ impl<'a> MainView<'a> {
             ]
             .align_items(Alignment::Center)
         )
-        .padding(styles::spacing::MEDIUM.0)
+        .padding([0, styles::spacing::MEDIUM.0 as u16])
         .into()
     }
 
-    /// Overlay delle notifiche
-    fn notifications_overlay(&self, _theme: &Theme) -> Element<'a, Message> {
-        let notifications: Element<Message> = self.notifications
-            .iter()
-            .fold(
-                column![].spacing(styles::spacing::SMALL),
-                |col, notification| {
-                    col.push(
-                        container(
-                            column![
-                                text(&notification.title).style(styles::colors::TEXT_PRIMARY),
-                                text(&notification.content).style(styles::colors::TEXT_SECONDARY),
-                            ]
-                        )
-                        .padding(styles::spacing::SMALL.0)
-                    )
-                }
-            )
-            .into();
+    /// Bounded, scrollable activity log pinned above the status bar.
+    /// Never grows past `ACTIVITY_LOG_HEIGHT`, so the device list keeps its space.
+    /// The newest entry is shown as a highlighted banner on the first line.
+    fn activity_log(&self, _theme: &Theme) -> Element<'a, Message> {
+        let entries = self.notifications.iter().rev().fold(
+            column![].spacing(styles::spacing::TINY),
+            |col, n| {
+                let color = match n.notification_type {
+                    NotificationType::Success => styles::colors::SUCCESS,
+                    NotificationType::Error => styles::colors::ERROR,
+                    NotificationType::Warning => styles::colors::WARNING,
+                    NotificationType::Info => styles::colors::INFO,
+                };
+                col.push(
+                    row![
+                        text("●").size(10).style(color),
+                        text(format!("{} — {}", n.title, n.content))
+                            .size(12)
+                            .style(styles::colors::TEXT_SECONDARY),
+                    ]
+                    .spacing(styles::spacing::SMALL)
+                    .align_items(Alignment::Center)
+                )
+            },
+        );
 
-        container(notifications)
-            .padding(styles::spacing::MEDIUM.0)
-            .into()
+        container(
+            column![
+                text("Activity")
+                    .size(12)
+                    .style(styles::colors::TEXT_MUTED),
+                self.latest_banner(),
+                scrollable(entries).height(Length::Fill),
+            ]
+            .spacing(styles::spacing::TINY)
+        )
+        .padding(styles::spacing::SMALL.0)
+        .width(Length::Fill)
+        .height(Length::Fixed(ACTIVITY_LOG_HEIGHT))
+        .style(styles::container_secondary)
+        .into()
     }
 
-    /// Dialog per l'invio di link
+    fn latest_banner(&self) -> Element<'a, Message> {
+        let Some(latest) = self.notifications.last() else {
+            return Space::with_height(0).into();
+        };
+
+        let color = match latest.notification_type {
+            NotificationType::Success => styles::colors::SUCCESS,
+            NotificationType::Error => styles::colors::ERROR,
+            NotificationType::Warning => styles::colors::WARNING,
+            NotificationType::Info => styles::colors::INFO,
+        };
+
+        container(
+            row![
+                text("●").size(11).style(color),
+                text(format!("{} — {}", latest.title, latest.content))
+                    .size(13)
+                    .style(styles::colors::TEXT_PRIMARY),
+            ]
+            .spacing(styles::spacing::SMALL)
+            .align_items(Alignment::Center)
+        )
+        .padding([styles::spacing::TINY.0 as u16, styles::spacing::MEDIUM.0 as u16])
+        .width(Length::Fill)
+        .style(move |_theme: &iced::Theme| container::Appearance {
+            background: Some(iced::Background::Color(styles::colors::SURFACE_VARIANT)),
+            border: iced::Border {
+                color,
+                width: 1.0,
+                radius: 6.0.into(),
+            },
+            ..Default::default()
+        })
+        .into()
+    }
+
     fn link_dialog(&self, _theme: &Theme) -> Element<'a, Message> {
         let dialog_content = column![
-            text("Invia Link")
+            text("Send Link")
                 .size(18)
                 .style(styles::colors::TEXT_SECONDARY),
-            
+
             Space::with_height(styles::spacing::MEDIUM),
-            
-            text_input("Inserisci URL...", self.link_url)
+
+            text_input("Enter URL...", self.link_url)
                 .on_input(Message::LinkInputChanged)
                 .width(Length::Fill),
-            
+
             Space::with_height(styles::spacing::MEDIUM),
-            
+
             row![
                 button(
-                    text("Annulla")
+                    text("Cancel")
                         .size(14)
                 )
                 .on_press(Message::HideLinkDialog),
-                
+
                 Space::with_width(styles::spacing::MEDIUM),
-                
+
                 button(
-                    text("Invia")
+                    text("Send")
                         .size(14)
                 )
                 .on_press_maybe(
@@ -583,7 +608,6 @@ impl<'a> MainView<'a> {
         .center_y()
         .width(Length::Fill)
         .height(Length::Fill)
-        
         .into()
     }
 }

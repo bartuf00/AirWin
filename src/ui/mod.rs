@@ -1,27 +1,25 @@
-//! Modulo principale dell'interfaccia utente Iced
+//! Main user-interface module (Iced)
 //!
-//! Questo modulo contiene l'implementazione completa dell'interfaccia utente
-//! utilizzando la libreria Iced, con design moderno e reattivo.
+//! Contains the complete UI implementation built on Iced,
+//! with a modern, responsive design.
 
 use iced::{
     executor,
-    Application, Command, Element, Settings, Subscription, Theme as IcedTheme,
+    window, Application, Command, Element, Settings, Subscription, Theme as IcedTheme,
 };
 
 use std::time::Duration;
 
-// Moduli
-// `app.rs` / `window.rs` are obsolete drafts (depend on eframe) and are not compiled.
 pub mod components;
 pub mod messages;
 pub mod styles;
 pub mod views;
 pub mod widgets;
 
-// Re-export dei tipi principali
+// Re-export of main types
 pub use messages::Message;
  
-/// Tema dell'applicazione (utilizzato da `styles` per gli stili personalizzati)
+/// Application theme (used by `styles` for custom styles)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Theme {
     #[default]
@@ -29,65 +27,65 @@ pub enum Theme {
     Light,
 }
  
-/// Struttura principale dell'applicazione AirWin
+/// Main AirWin application struct
 #[derive(Debug)]
 pub struct AirWinApp {
-    /// Stato corrente dell'applicazione
+    /// Current application state
     current_view: AppView,
     
-    /// Dispositivi scoperti nella rete
+    /// Devices discovered on the network
     discovered_devices: Vec<crate::network::DiscoveredDevice>,
     
-    /// Dispositivo attualmente selezionato
+    /// Currently selected device
     selected_device: Option<crate::network::DiscoveredDevice>,
     
-    /// Stato della scansione
+    /// Scan state
     is_scanning: bool,
     
-    /// Stato AirPlay
+    /// AirPlay state
     airplay_status: crate::protocols::airplay::AirPlayStatus,
     
-    /// Stato AirDrop
+    /// AirDrop state
     airdrop_status: crate::protocols::airdrop::AirDropStatus,
     
-    /// Progresso del trasferimento file (0.0-100.0)
+    /// File transfer progress (0.0-100.0)
     file_transfer_progress: Option<f32>,
     
-    /// Notificazioni attive
+    /// Active notifications
     notifications: Vec<messages::NotificationMessage>,
     
-    /// Tema corrente
+    /// Current theme
     theme: Theme,
     
-    /// Vista impostazioni persistita per evitare problemi di lifetime
+    /// Persisted settings view to avoid lifetime issues
     settings_view: views::settings_view::SettingsView,
     
-    /// Vista informazioni persistita per evitare problemi di lifetime
+    /// Persisted about view to avoid lifetime issues
     about_view: views::about_view::AboutView,
     
-    /// Stato del dialog per l'invio di link
+    /// State of the send-link dialog
     show_link_dialog: bool,
     
-    /// URL da inviare tramite link
+    /// URL to send as a link
     link_url: String,
     
-    /// Stato di caricamento generale
+    /// General loading state
     is_loading: bool,
     
-    /// Messaggio di stato
+    /// Status message
     status_message: String,
 } 
 
-/// Viste disponibili nell'applicazione
+/// Views available in the application
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AppView {
-    /// Vista principale con lista dispositivi e pannello azioni
+    /// Main view with device list and action panel
     Main,
-    /// Vista delle impostazioni
+    /// Settings view
     Settings,
-    /// Vista informazioni sull'app
+    /// About view
     About,
-    /// Vista di caricamento iniziale
+    /// Initial loading view
     Loading,
 }
 
@@ -106,7 +104,7 @@ impl Application for AirWinApp {
     fn new(_flags: Self::Flags) -> (Self, Command<Self::Message>) {
         let app = Self {
             current_view: AppView::Loading,
-            status_message: "Inizializzazione in corso...".to_string(),
+            status_message: "Initializing...".to_string(),
             is_loading: true,
             theme: Theme::default(),
             settings_view: views::settings_view::SettingsView::new(
@@ -145,7 +143,7 @@ impl Application for AirWinApp {
 
         let command = Command::perform(
             async {
-                // Simula inizializzazione
+                // Simulated initialization
                 tokio::time::sleep(Duration::from_secs(2)).await;
             },
             |_| Message::InitializationComplete,
@@ -156,10 +154,10 @@ impl Application for AirWinApp {
 
     fn title(&self) -> String {
         match self.current_view {
-            AppView::Main => "AirWin - Condivisione Apple".to_string(),
-            AppView::Settings => "AirWin - Impostazioni".to_string(),
-            AppView::About => "AirWin - Informazioni".to_string(),
-            AppView::Loading => "AirWin - Caricamento".to_string(),
+            AppView::Main => "AirWin - Apple Sharing".to_string(),
+            AppView::Settings => "AirWin - Settings".to_string(),
+            AppView::About => "AirWin - About".to_string(),
+            AppView::Loading => "AirWin - Loading".to_string(),
         }
     }
 
@@ -168,9 +166,9 @@ impl Application for AirWinApp {
             Message::InitializationComplete => {
                 self.current_view = AppView::Main;
                 self.is_loading = false;
-                self.status_message = "Pronto".to_string();
+                self.status_message = "Ready".to_string();
                 
-                // Avvia la scansione automatica
+                // Start automatic scanning
                 Command::perform(
                     async { () },
                     |_| Message::StartScanning,
@@ -179,7 +177,7 @@ impl Application for AirWinApp {
 
             Message::StartScanning => {
                 self.is_scanning = true;
-                self.status_message = "Scansione dispositivi in corso...".to_string();
+                self.status_message = "Scanning for devices...".to_string();
                 
                 Command::perform(
                     Self::scan_devices(),
@@ -189,7 +187,7 @@ impl Application for AirWinApp {
 
             Message::StopScanning => {
                 self.is_scanning = false;
-                self.status_message = "Scansione interrotta".to_string();
+                self.status_message = "Scan stopped".to_string();
                 Command::none()
             }
 
@@ -197,15 +195,15 @@ impl Application for AirWinApp {
                 self.discovered_devices = devices;
                 self.is_scanning = false;
                 self.status_message = format!(
-                    "Trovati {} dispositivi",
+                    "Found {} devices",
                     self.discovered_devices.len()
                 );
                 
                 if !self.discovered_devices.is_empty() {
                     self.add_notification(
-                        "Dispositivi trovati".to_string(),
+                        "Devices found".to_string(),
                         format!(
-                            "Scoperti {} dispositivi Apple nelle vicinanze",
+                            "Discovered {} nearby Apple devices",
                             self.discovered_devices.len()
                         ),
                         messages::NotificationType::Success,
@@ -217,11 +215,11 @@ impl Application for AirWinApp {
 
             Message::DeviceSelected(device) => {
                 self.selected_device = Some(device.clone());
-                self.status_message = format!("Selezionato: {}", device.name);
+                self.status_message = format!("Selected: {}", device.name);
                 
                 self.add_notification(
-                    "Dispositivo selezionato".to_string(),
-                    format!("Ora puoi inviare contenuti a {}", device.name),
+                    "Device selected".to_string(),
+                    format!("You can now send content to {}", device.name),
                     messages::NotificationType::Info,
                 );
                 
@@ -245,8 +243,8 @@ impl Application for AirWinApp {
             Message::SendLink(device, url) => {
                 self.link_url = url.clone();
                 self.add_notification(
-                    "Invio link".to_string(),
-                    format!("Invio link a {}", device.name),
+                    "Sending link".to_string(),
+                    format!("Sending link to {}", device.name),
                     messages::NotificationType::Info,
                 );
                 self.airdrop_status = crate::protocols::airdrop::AirDropStatus::Connecting;
@@ -273,12 +271,12 @@ impl Application for AirWinApp {
                 self.airdrop_status = crate::protocols::airdrop::AirDropStatus::Idle;
                 match result {
                     Ok(()) => self.add_notification(
-                        "Trasferimento completato".to_string(),
-                        "Operazione completata con successo".to_string(),
+                        "Transfer complete".to_string(),
+                        "Operation completed successfully".to_string(),
                         messages::NotificationType::Success,
                     ),
                     Err(e) => self.add_notification(
-                        "Trasferimento fallito".to_string(),
+                        "Transfer failed".to_string(),
                         e,
                         messages::NotificationType::Error,
                     ),
@@ -305,7 +303,7 @@ impl Application for AirWinApp {
             Message::ShowNotification(notification) => {
                 self.notifications.push(notification);
                 
-                // Auto-rimuovi notifica dopo 5 secondi
+                // Auto-remove notification after 5 seconds
                 Command::perform(
                     async {
                         tokio::time::sleep(Duration::from_secs(5)).await;
@@ -340,12 +338,12 @@ impl Application for AirWinApp {
                 self.airplay_status = status.clone();
                 match status {
                     crate::protocols::airplay::AirPlayStatus::Connected => self.add_notification(
-                        "AirPlay connesso".to_string(),
-                        "Connessione AirPlay stabilita".to_string(),
+                        "AirPlay connected".to_string(),
+                        "AirPlay connection established".to_string(),
                         messages::NotificationType::Success,
                     ),
                     crate::protocols::airplay::AirPlayStatus::Failed(err) => self.add_notification(
-                        "Errore AirPlay".to_string(),
+                        "AirPlay error".to_string(),
                         err,
                         messages::NotificationType::Error,
                     ),
@@ -354,7 +352,7 @@ impl Application for AirWinApp {
                 Command::none()
             }
             
-            // Handle all other message variants with a wildcard pattern
+            // Remaining message variants
             _ => Command::none(),
         }
     }
@@ -369,7 +367,7 @@ impl Application for AirWinApp {
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
-        // Subscription per aggiornamenti periodici se necessario
+        // Periodic updates subscription
         Subscription::none()
     }
 
@@ -382,12 +380,12 @@ impl Application for AirWinApp {
 }
 
 impl AirWinApp {
-    /// Vista di caricamento
+    /// Loading view
     fn loading_view(&self) -> Element<Message> {
         components::loading_state(&self.status_message)
     }
 
-    /// Vista principale dell'applicazione
+    /// Main application view
     fn main_view(&self) -> Element<Message> {
         views::main_view::render(
             &self.discovered_devices,
@@ -403,25 +401,25 @@ impl AirWinApp {
         )
     }
  
-    /// Vista impostazioni
+    /// Settings view
     fn settings_view(&self) -> Element<Message> {
         self.settings_view.view(&self.theme)
     }
 
-    /// Vista informazioni
+    /// About view
     fn about_view(&self) -> Element<Message> {
         self.about_view.view(&self.theme)
     }
   
-    /// Simula la scansione dei dispositivi nella rete
+    /// Simulated network device scan
     async fn scan_devices() -> Vec<crate::network::DiscoveredDevice> {
-        // Simula una pausa per la scansione
+        // Simulated scan delay
         tokio::time::sleep(Duration::from_secs(3)).await;
         
-        // Dispositivi di esempio per il testing
+        // Sample devices for testing
         vec![
             crate::network::DiscoveredDevice {
-                name: "iPhone di Marco".to_string(),
+                name: "Marco's iPhone".to_string(),
                 address: std::net::IpAddr::V4(std::net::Ipv4Addr::new(192,168,1,100)),
                 port: 8771,
                 service_type: crate::network::ServiceType::AirDrop,
@@ -444,7 +442,7 @@ impl AirWinApp {
         ]
     }
 
-    /// Simula il trasferimento di un file
+    /// Simulated file transfer
     async fn simulate_file_transfer() -> f32 {
         for progress in (0..=100).step_by(10) {
             tokio::time::sleep(Duration::from_millis(200)).await;
@@ -455,7 +453,7 @@ impl AirWinApp {
         100.0
     }
 
-    /// Aggiunge una notifica alla lista
+    /// Push a notification onto the list
     fn add_notification(
         &mut self,
         title: String,
@@ -471,18 +469,22 @@ impl AirWinApp {
         
         self.notifications.push(notification);
         
-        // Mantieni solo le ultime 5 notifiche
+        // Keep only the last 5 notifications
         if self.notifications.len() > 5 {
             self.notifications.remove(0);
         }
     }
 }
 
-/// Funzione principale per avviare l'applicazione
+/// Window icon decoded from the embedded PNG at startup.
+fn window_icon() -> Option<window::Icon> {
+    let img = image::load_from_memory(include_bytes!("../../assets/icon.png")).ok()?.to_rgba8();
+    let (w, h) = img.dimensions();
+    window::icon::from_rgba(img.into_raw(), w, h).ok()
+}
+
+/// Main entry point that launches the application
 pub fn run() -> iced::Result {
-    // Prefer DirectX 12 backend on Windows to avoid Vulkan validation spam
-    // and disable extra WGPU validation layers in release usage.
-    // These can be overridden by user environment variables if needed.
     std::env::set_var("WGPU_BACKEND", "dx12");
     std::env::set_var("WGPU_VALIDATION", "0");
 
@@ -494,7 +496,7 @@ pub fn run() -> iced::Result {
             resizable: true,
             decorations: true,
             transparent: false,
-            icon: None,
+            icon: window_icon(),
             ..Default::default()
         },
         default_font: iced::Font::DEFAULT,
@@ -506,11 +508,10 @@ pub fn run() -> iced::Result {
     AirWinApp::run(settings)
 }
 
-/// Avvia l'applicazione AirWin con i servizi forniti
+/// Launch the AirWin application with the provided services
 pub async fn run_app(
     _services: std::sync::Arc<crate::AirWinServices>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // Prefer DX12 and disable WGPU validation in async run path as well
     std::env::set_var("WGPU_BACKEND", "dx12");
     std::env::set_var("WGPU_VALIDATION", "0");
 
@@ -522,7 +523,7 @@ pub async fn run_app(
             resizable: true,
             decorations: true,
             transparent: false,
-            icon: None,
+            icon: window_icon(),
             ..Default::default()
         },
         antialiasing: true,
@@ -535,7 +536,7 @@ pub async fn run_app(
     Ok(())
 }
 
-/// Macro di utilità per creare elementi con spaziatura
+/// Helper macro: column with spacing
 #[macro_export]
 macro_rules! spaced {
     ($spacing:expr, $($element:expr),+ $(,)?) => {
@@ -543,7 +544,7 @@ macro_rules! spaced {
     };
 }
 
-/// Macro di utilità per creare righe con spaziatura
+/// Helper macro: row with spacing
 #[macro_export]
 macro_rules! spaced_row {
     ($spacing:expr, $($element:expr),+ $(,)?) => {

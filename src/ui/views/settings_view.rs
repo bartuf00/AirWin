@@ -1,7 +1,7 @@
-//! Vista delle impostazioni dell'applicazione AirWin
+//! Application settings view
 //!
-//! Questa vista permette di configurare le preferenze dell'applicazione,
-//! le impostazioni di rete e i protocolli di comunicazione.
+//! Configures application preferences, network settings
+//! and communication protocols.
 
 use iced::{
     widget::{
@@ -17,7 +17,7 @@ use crate::ui::{
     Theme,
 };
 
-// Scelte statiche per i controlli `pick_list` per evitare riferimenti a temporanei
+// Static choices for `pick_list` controls to avoid references to temporaries
 const AIRDROP_VISIBILITIES: [AirDropVisibility; 3] = [
     AirDropVisibility::Everyone,
     AirDropVisibility::ContactsOnly,
@@ -39,36 +39,36 @@ const LOG_LEVELS: [LogLevel; 5] = [
     LogLevel::Trace,
 ];
 
-// Scelte vuote statiche per l'elenco interfacce di rete (placeholder)
+// Empty static choices for the network interface list (placeholder)
 const EMPTY_INTERFACES: [&str; 0] = [];
 
-/// Struttura per la vista delle impostazioni
+/// Settings view state
 #[derive(Debug, Clone)]
 pub struct SettingsView {
-    // Impostazioni generali
+    // General settings
     auto_discovery: bool,
     discovery_interval: u32,
     show_notifications: bool,
     minimize_to_tray: bool,
     
-    // Impostazioni AirDrop
+    // AirDrop settings
     airdrop_enabled: bool,
     airdrop_visibility: AirDropVisibility,
     auto_accept_from_contacts: bool,
     
-    // Impostazioni AirPlay
+    // AirPlay settings
     airplay_enabled: bool,
     airplay_quality: AirPlayQuality,
     airplay_audio_only: bool,
     
-    // Impostazioni di rete
+    // Network settings
     network_interface: Option<String>,
     available_interfaces: Vec<String>,
     custom_port: Option<u16>,
-    // Versione testuale persistente della porta personalizzata per `text_input`
+    // Persistent text version of the custom port for `text_input`
     custom_port_text: String,
     
-    // Impostazioni avanzate
+    // Advanced settings
     debug_mode: bool,
     log_level: LogLevel,
     max_concurrent_transfers: u32,
@@ -84,9 +84,9 @@ pub enum AirDropVisibility {
 impl std::fmt::Display for AirDropVisibility {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AirDropVisibility::Everyone => write!(f, "Tutti"),
-            AirDropVisibility::ContactsOnly => write!(f, "Solo Contatti"),
-            AirDropVisibility::ReceivingOff => write!(f, "Disattivato"),
+            AirDropVisibility::Everyone => write!(f, "Everyone"),
+            AirDropVisibility::ContactsOnly => write!(f, "Contacts Only"),
+            AirDropVisibility::ReceivingOff => write!(f, "Receiving Off"),
         }
     }
 }
@@ -102,10 +102,10 @@ pub enum AirPlayQuality {
 impl std::fmt::Display for AirPlayQuality {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AirPlayQuality::Low => write!(f, "Bassa"),
-            AirPlayQuality::Medium => write!(f, "Media"),
-            AirPlayQuality::High => write!(f, "Alta"),
-            AirPlayQuality::Auto => write!(f, "Automatica"),
+            AirPlayQuality::Low => write!(f, "Low"),
+            AirPlayQuality::Medium => write!(f, "Medium"),
+            AirPlayQuality::High => write!(f, "High"),
+            AirPlayQuality::Auto => write!(f, "Auto"),
         }
     }
 }
@@ -122,8 +122,8 @@ pub enum LogLevel {
 impl std::fmt::Display for LogLevel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            LogLevel::Error => write!(f, "Errore"),
-            LogLevel::Warn => write!(f, "Avviso"),
+            LogLevel::Error => write!(f, "Error"),
+            LogLevel::Warn => write!(f, "Warning"),
             LogLevel::Info => write!(f, "Info"),
             LogLevel::Debug => write!(f, "Debug"),
             LogLevel::Trace => write!(f, "Trace"),
@@ -132,7 +132,7 @@ impl std::fmt::Display for LogLevel {
 }
 
 impl SettingsView {
-    /// Crea una nuova istanza della vista impostazioni
+    /// Create a new settings view
     pub fn new(
         auto_discovery: bool,
         discovery_interval: u32,
@@ -172,7 +172,7 @@ impl SettingsView {
         }
     }
 
-    /// Sezione impostazioni AirPlay
+    /// AirPlay settings section
     fn airplay_settings(&self, _theme: &Theme) -> Element<Message> {
         let section_header = text("AirPlay")
             .size(18);
@@ -180,16 +180,16 @@ impl SettingsView {
         let settings = column![
             // AirPlay abilitato
             checkbox(
-                "Abilita AirPlay",
+                "Enable AirPlay",
                 self.airplay_enabled
             )
             .on_toggle(|_| Message::Tick),
             
             if self.airplay_enabled {
                 column![
-                    // Qualità
+                    // Quality
                     row![
-                        text("Qualità video:")
+                        text("Video quality:")
                             .size(14)
                             .width(Length::FillPortion(1)),
                         
@@ -203,9 +203,9 @@ impl SettingsView {
                     .align_items(Alignment::Center)
                     .spacing(styles::spacing::MEDIUM),
                     
-                    // Solo audio
+                    // Audio only
                     checkbox(
-                        "Solo audio (migliori prestazioni)",
+                        "Audio only (better performance)",
                         self.airplay_audio_only
                     )
                     .on_toggle(|_| Message::Tick),
@@ -229,11 +229,11 @@ impl SettingsView {
         .into()
     }
 
-    /// Renderizza la vista delle impostazioni
+    /// Render the settings view
     pub fn view(&self, theme: &Theme) -> Element<Message> {
         let header = row![
             button(
-                text("← Indietro")
+                text("← Back")
                     .size(14)
             )
             .on_press(Message::ShowMainView)
@@ -241,25 +241,25 @@ impl SettingsView {
             
             Space::with_width(styles::spacing::MEDIUM),
             
-            text("Impostazioni")
+            text("Settings")
                 .size(24)
                 ,
             
             Space::with_width(Length::Fill),
             
             button(
-                text("💾 Salva")
+                text("Save")
                     .size(14)
             )
-            // Placeholder azione salvataggio
+            // Save action placeholder
             .on_press(Message::Tick)
             .style(iced::theme::Button::Primary),
             
             button(
-                text("🔄 Reset")
+                text("Reset")
                     .size(14)
             )
-            // Placeholder azione reset
+            // Reset action placeholder
             .on_press(Message::Tick)
             .style(iced::theme::Button::Secondary),
         ]
@@ -268,27 +268,27 @@ impl SettingsView {
 
         let content = scrollable(
             column![
-                // Impostazioni generali
+                // General settings
                 self.general_settings(theme),
                 
                 Space::with_height(styles::spacing::LARGE),
                 
-                // Impostazioni AirDrop
+                // AirDrop settings
                 self.airdrop_settings(theme),
                 
                 Space::with_height(styles::spacing::LARGE),
                 
-                // Impostazioni AirPlay
+                // AirPlay settings
                 self.airplay_settings(theme),
                 
                 Space::with_height(styles::spacing::LARGE),
                 
-                // Impostazioni di rete
+                // Network settings
                 self.network_settings(theme),
                 
                 Space::with_height(styles::spacing::LARGE),
                 
-                // Impostazioni avanzate
+                // Advanced settings
                 self.advanced_settings(theme),
                 
                 Space::with_height(styles::spacing::LARGE),
@@ -308,16 +308,16 @@ impl SettingsView {
         .into()
     }
 
-    /// Sezione impostazioni generali
+    /// General settings section
     fn general_settings(&self, _theme: &Theme) -> Element<Message> {
-        let section_header = text("Generale")
+        let section_header = text("General")
             .size(18);
 
         let settings = column![
             // Auto discovery
             row![
                 checkbox(
-                    "Scoperta automatica dispositivi",
+                    "Automatic device discovery",
                     self.auto_discovery
                 )
                 .on_toggle(|_| Message::Tick),
@@ -326,7 +326,7 @@ impl SettingsView {
             // Discovery interval
             if self.auto_discovery {
                 column![
-                    text(format!("Intervallo scansione: {} secondi", self.discovery_interval))
+                    text(format!("Scan interval: {} seconds", self.discovery_interval))
                         .size(14)
                         ,
                     
@@ -342,16 +342,16 @@ impl SettingsView {
                 column![]
             },
             
-            // Notifiche
+            // Notifications
             checkbox(
-                "Mostra notifiche",
+                "Show notifications",
                 self.show_notifications
             )
             .on_toggle(|_| Message::Tick),
             
             // Minimize to tray
             checkbox(
-                "Minimizza nella system tray",
+                "Minimize to system tray",
                 self.minimize_to_tray
             )
             .on_toggle(|_| Message::Tick),
@@ -370,7 +370,7 @@ impl SettingsView {
         .into()
     }
 
-    /// Sezione impostazioni AirDrop
+    /// AirDrop settings section
     fn airdrop_settings(&self, _theme: &Theme) -> Element<Message> {
         let section_header = text("AirDrop")
             .size(18);
@@ -378,16 +378,16 @@ impl SettingsView {
         let settings = column![
             // AirDrop abilitato
             checkbox(
-                "Abilita AirDrop",
+                "Enable AirDrop",
                 self.airdrop_enabled
             )
             .on_toggle(|_| Message::Tick),
             
             if self.airdrop_enabled {
                 column![
-                    // Visibilità
+                    // Visibility
                     row![
-                        text("Visibilità:")
+                        text("Visibility:")
                             .size(14)
                             
                             .width(Length::FillPortion(1)),
@@ -403,9 +403,9 @@ impl SettingsView {
                     .align_items(Alignment::Center)
                     .spacing(styles::spacing::MEDIUM),
                     
-                    // Auto accept da contatti
+                    // Auto-accept from contacts
                     checkbox(
-                        "Accetta automaticamente da contatti",
+                        "Automatically accept from contacts",
                         self.auto_accept_from_contacts
                     )
                     .on_toggle(|_| Message::Tick),
@@ -429,15 +429,15 @@ impl SettingsView {
         .into()
     }
 
-    /// Sezione impostazioni di rete
+    /// Network settings section
     fn network_settings(&self, _theme: &Theme) -> Element<Message> {
-        let section_header = text("Rete")
+        let section_header = text("Network")
             .size(18);
 
         let settings = column![
-            // Interfaccia di rete
+            // Network interface
             row![
-                text("Interfaccia di rete:")
+                text("Network interface:")
                     .size(14)
                     
                     .width(Length::FillPortion(1)),
@@ -447,22 +447,22 @@ impl SettingsView {
                     None::<&str>,
                     |_| Message::Tick
                 )
-                .placeholder("Automatica")
+                .placeholder("Automatic")
                 
                 .width(Length::FillPortion(2)),
             ]
             .align_items(Alignment::Center)
             .spacing(styles::spacing::MEDIUM),
             
-            // Porta personalizzata
+            // Custom port
             row![
-                text("Porta personalizzata:")
+                text("Custom port:")
                     .size(14)
                     
                     .width(Length::FillPortion(1)),
                 
                 text_input(
-                    "Automatica",
+                    "Automatic",
                     ""
                 )
                 .on_input(|_| Message::Tick)
@@ -485,15 +485,15 @@ impl SettingsView {
         .into()
     }
 
-    /// Sezione impostazioni avanzate
+    /// Advanced settings section
     fn advanced_settings(&self, _theme: &Theme) -> Element<Message> {
-        let section_header = text("Avanzate")
+        let section_header = text("Advanced")
             .size(18);
 
         let settings = column![
             // Debug mode
             checkbox(
-                "Modalità debug",
+                "Debug mode",
                 self.debug_mode
             )
             .on_toggle(|_| Message::ToggleDebugMode)
@@ -501,7 +501,7 @@ impl SettingsView {
             
             // Log level
             row![
-                text("Livello di log:")
+                text("Log level:")
                     .size(14)
                     
                     .width(Length::FillPortion(1)),
@@ -519,7 +519,7 @@ impl SettingsView {
             
             // Max concurrent transfers
             column![
-                text(format!("Trasferimenti simultanei: {}", self.max_concurrent_transfers))
+                text(format!("Concurrent transfers: {}", self.max_concurrent_transfers))
                     .size(14)
                     ,
                 
@@ -532,24 +532,24 @@ impl SettingsView {
             ]
             .spacing(styles::spacing::SMALL),
             
-            // Azioni avanzate
+            // Advanced actions
             row![
                 button(
-                    text("🗂 Apri Log")
+                    text("Open Log Folder")
                         .size(14)
                 )
                 .on_press(Message::OpenLogFolder)
                 .style(iced::theme::Button::Secondary),
                 
                 button(
-                    text("🧹 Pulisci Cache")
+                    text("Clear Cache")
                         .size(14)
                 )
                 .on_press(Message::ClearCache)
                 .style(iced::theme::Button::Secondary),
                 
                 button(
-                    text("📊 Diagnostica")
+                    text("Diagnostics")
                         .size(14)
                 )
                 .on_press(Message::RunDiagnostics)
