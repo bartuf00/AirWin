@@ -211,7 +211,7 @@ impl AboutView {
         .into()
     }
 
-    /// Description dell'applicazione
+    /// Application description
     fn description(&self, _theme: &Theme) -> Element<Message> {
         container(
             column![
@@ -238,7 +238,7 @@ impl AboutView {
         .into()
     }
 
-    /// Features principali
+    /// Main features
     fn features(&self, theme: &Theme) -> Element<Message> {
         let features_list = column![
             (&self).feature_item("📁", "File Sharing", "Send and receive files via AirDrop", theme),
@@ -296,7 +296,7 @@ impl AboutView {
         .into()
     }
 
-    /// Credits e riconoscimenti
+    /// Credits and acknowledgements
     fn credits(&self, _theme: &Theme) -> Element<Message> {
         container(
             column![
@@ -380,7 +380,7 @@ impl AboutView {
         .into()
     }
 
-    /// Links utili
+    /// Useful links
     fn links(&self, _theme: &Theme) -> Element<Message> {
         container(
             column![
