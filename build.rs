@@ -1,5 +1,6 @@
 // Build script: embeds the application icon into the Windows executable
-// and converts assets/icon.png into an .ico for the window title bar.
+// resources (Explorer/taskbar/alt-tab icon). The window title-bar icon is
+// loaded separately at runtime from the embedded PNG in `ui::window_icon()`.
 
 use std::{env, fs, path::PathBuf};
 

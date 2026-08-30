@@ -114,13 +114,10 @@ impl<'a> MainView<'a> {
             .into();
 
         if self.show_link_dialog {
-            container(
-                column![
-                    base,
-                    self.link_dialog(theme),
-                ]
-            )
-            .padding(styles::spacing::MEDIUM.0)
+            column![
+                base,
+                self.link_dialog(theme),
+            ]
             .into()
         } else {
             base
@@ -483,9 +480,9 @@ impl<'a> MainView<'a> {
 
     /// Bounded, scrollable activity log pinned above the status bar.
     /// Never grows past `ACTIVITY_LOG_HEIGHT`, so the device list keeps its space.
-    /// The newest entry is shown as a highlighted banner on the first line.
+    /// The newest entry is shown as a highlighted banner and excluded from the list.
     fn activity_log(&self, _theme: &Theme) -> Element<'a, Message> {
-        let entries = self.notifications.iter().rev().fold(
+        let entries = self.notifications.iter().rev().skip(1).fold(
             column![].spacing(styles::spacing::TINY),
             |col, n| {
                 let color = match n.notification_type {
